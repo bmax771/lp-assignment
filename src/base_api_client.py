@@ -31,7 +31,7 @@ class BaseHarborApiClient:
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
         retry=retry_if_exception_type(httpx.ConnectTimeout),
-        retry_error_callback=lambda retry_state: "GET REQUEST FAILED",
+        retry_error_callback=lambda retry_state: "DELETE REQUEST FAILED",
     )
     async def harbor_delete(self, params: dict = None, headers: dict = None) -> dict:
         response = {}
@@ -50,7 +50,7 @@ class BaseHarborApiClient:
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
         retry=retry_if_exception_type(httpx.ConnectTimeout),
-        retry_error_callback=lambda retry_state: "GET REQUEST FAILED",
+        retry_error_callback=lambda retry_state: "POST REQUEST FAILED",
     )
     async def harbor_post(self, params: dict = None, headers: dict = None, data: dict = None) -> dict:
         response = {}
