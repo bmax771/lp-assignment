@@ -52,7 +52,7 @@ class BaseHarborApiClient:
         retry=retry_if_exception_type(httpx.ConnectTimeout),
         retry_error_callback=lambda retry_state: "GET REQUEST FAILED",
     )
-    async def harbor_delete(self, params: dict = None, headers: dict = None, data: dict = None) -> dict:
+    async def harbor_post(self, params: dict = None, headers: dict = None, data: dict = None) -> dict:
         response = {}
         client = httpx.AsyncClient()
         try:
