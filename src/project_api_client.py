@@ -2,19 +2,26 @@ from src.base_api_client import BaseHarborApiClient
 
 
 class ProjectApiClient(BaseHarborApiClient):
+    """
+        Class for projects handling.
+
+        Inherits from BaseHarborApiClient
+    """
+
     def __init__(self, auth):
-        super(BaseHarborApiClient, self).__init__()
         self.auth = auth
 
     async def get_projects(self, api_url, _page: int = 1):
-        paginated_url = api_url.replace(f"page={_page-1}", f"page={str(_page)}")
-        collated_response = await BaseHarborApiClient.harbor_get(self, paginated_url)
+        """
+            Gets list of projects.
 
-        if not collated_response:
-            return collated_response
-        elif collated_response.status_code == 200:
-            if "Link" not in collated_response.headers:
-                return collated_response.json()
-            elif "Link" in collated_response.headers:
-                _page += 1
-                return collated_response.json() + await self.get_projects(paginated_url, _page)
+            Args:
+                api_url (str): URL with query string for Artifacts API call
+                _page (int, optional): Page number to retrieve.
+
+            Returns:
+                collated_response (list): List of Projects across all pages.
+        """
+        base_harbor_client = BaseHarborApiClient(auth=self.auth)
+        response = await base_harbor_client.harbor_paginated_get(api_url=api_url, _page=_page)
+        return response
