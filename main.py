@@ -14,7 +14,12 @@ def input_processing(input_choice: str) -> list:
         project_name = input("Please enter the project name where the artifact resides: ")
         repo_name = input("Please enter the repository name where the artifact resides: ")
         page_size = input("[OPTIONAL] Please enter an integer value of number of items per page (default = 100): ")
-        return [input_choice, str(page_size), str(project_name), str(repo_name)]
+        return_list = [input_choice, str(page_size), str(project_name), str(repo_name)]
+        if input_choice == "delete":
+            days_threshold_for_deletion = input(
+                "[OPTIONAL] Please enter the number of days old tag that should be deleted (enter integer value): ")
+            return_list.append(days_threshold_for_deletion)
+        return return_list
 
     if input_choice == "project_repos":
         project_name = input("Please enter the project name: ")
@@ -34,22 +39,48 @@ def input_processing(input_choice: str) -> list:
         page_size = input("[OPTIONAL] Please enter an integer value of number of items per page (default = 100): ")
         return [input_choice, str(page_size)]
 
-    print("Please enter a valid choice.")
-    return []
-
 
 async def input_execution(inputs: list):
-    if inputs[0] == "artifacts" or inputs[0] == "delete":
-        url_string = (getenv("HARBOR_API_URL") + "/projects/" + inputs[2] + "/repositories/"
-                      + inputs[3] + "/artifacts?page=1")
-        if inputs[1]:
-            url_string += f"&page_size={inputs[1]}"
-        else:
-            url_string += f"&page_size=100"
+    print(f"OUTPUT:")
+    if inputs[0] == "artifacts":
+        if inputs[2] != "" and inputs[3] != "":
 
-        artifact_object = ArtifactApiClient((getenv("HARBOR_USERNAME"), getenv("HARBOR_PASSWORD")))
-        response = await artifact_object.get_artifacts(api_url=url_string)
-        return response
+            url_string = (getenv("HARBOR_API_URL") + "/projects/" + inputs[2] + "/repositories/"
+                          + inputs[3] + "/artifacts?page=1")
+            if inputs[1]:
+                url_string += f"&page_size={inputs[1]}"
+            else:
+                url_string += f"&page_size=100"
+
+            artifact_object = ArtifactApiClient((getenv("HARBOR_USERNAME"), getenv("HARBOR_PASSWORD")))
+            response = await artifact_object.get_artifacts(api_url=url_string)
+            return response
+        else:
+            return "Please enter project name and repository name."
+
+    if inputs[0] == "delete":
+
+        if inputs[2] != "" and inputs[3] != "":
+            url_string = (getenv("HARBOR_API_URL") + "/projects/" + inputs[2] + "/repositories/"
+                          + inputs[3] + "/artifacts?page=1")
+            if inputs[1]:
+                url_string += f"&page_size={inputs[1]}"
+            else:
+                url_string += f"&page_size=100"
+            days_threshold_for_deletion = None
+            if inputs[4]:
+                try:
+                    days_threshold_for_deletion = int(inputs[4])
+                    if days_threshold_for_deletion < 0:
+                        raise ValueError
+                except ValueError:
+                    return "Please enter valid number of days as integer number."
+            artifact_object = ArtifactApiClient((getenv("HARBOR_USERNAME"), getenv("HARBOR_PASSWORD")))
+            response = await artifact_object.delete_artifact(api_url=url_string,
+                                                             days_threshold_for_deletion=days_threshold_for_deletion)
+            return response
+        else:
+            return "Please enter project name and repository name."
 
     if inputs[0] == "list_project":
         url_string = getenv("HARBOR_API_URL") + "/projects?page=1"
@@ -80,20 +111,24 @@ async def input_execution(inputs: list):
         return response
 
     if inputs[0] == "project_repos":
-        url_string = getenv("HARBOR_API_URL") + "/projects/" + inputs[2] + "/repositories?page=1"
-        if inputs[1]:
-            url_string += f"&page_size={inputs[1]}"
-        else:
-            url_string += f"&page_size=100"
-        all_repos_object = RepositoryApiClient((getenv("HARBOR_USERNAME"), getenv("HARBOR_PASSWORD")))
-        response = await all_repos_object.get_specific_project_repos(api_url=url_string)
-        return response
+
+        if inputs[2] != "":
+            url_string = getenv("HARBOR_API_URL") + "/projects/" + inputs[2] + "/repositories?page=1"
+            if inputs[1]:
+                url_string += f"&page_size={inputs[1]}"
+            else:
+                url_string += f"&page_size=100"
+            project_repos_object = RepositoryApiClient((getenv("HARBOR_USERNAME"), getenv("HARBOR_PASSWORD")))
+            response = await project_repos_object.get_specific_project_repos(api_url=url_string)
+            return response
+    else:
+        return "Please enter project name."
 
 
 async def main(input_choice: str):
     inputs = input_processing(input_choice)
     if not inputs:
-        return None
+        return f"Exiting execution due to incorrect input. Please try again."
     try:
         response = await input_execution(inputs)
     except Exception as e:
@@ -103,16 +138,24 @@ async def main(input_choice: str):
 
 if __name__ == "__main__":
     check_if_env_got_loaded = load_dotenv(dotenv_path=ENVPATH)
+    choice = ""
     if check_if_env_got_loaded:
-        print(f"### Application start. ###"
-              f"Please enter action to perform on Harbor API interface "
-              f"using following options.\n"
-              f"1) list_project: To list projects.\n"
-              f"3) all_repos: To list repos.\n"
-              f"3) project_repos: To list repos.\n"
-              f"4) artifacts: To list artifacts inside the project.\n"
-              f"5) delete: To delete tags that are older than 30 days.\n")
-        choice = input("Please enter your choice: ")
-        print(run(main, choice))
+        while choice.lower() != exit:
+            print(f"\n### Application start. ###"
+                  f"Please enter action to perform on Harbor API interface "
+                  f"using following options.\n"
+                  f"1) list_project: To list projects.\n"
+                  f"2) all_repos: To list repos.\n"
+                  f"3) project_repos: To list repos.\n"
+                  f"4) artifacts: To list artifacts inside the project.\n"
+                  f"5) delete: To delete tags that are older than specified days "
+                  f"(Default value is 30 days).\n"
+                  f"6) exit: To exit the program\n")
+            choice = input("Please enter your choice: ")
+            if (choice.lower() == exit or
+                    choice.lower() not in ["list_project", "all_repos", "project_repos", "artifacts", "delete"]):
+                print("Exiting program...")
+                break
+            print(run(main, choice))
     else:
         print(".env file not found. Cannot proceed with APIs.")

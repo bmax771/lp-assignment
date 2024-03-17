@@ -1,5 +1,5 @@
 from src.base_api_client import BaseHarborApiClient
-
+import json
 
 class RepositoryApiClient(BaseHarborApiClient):
     """
@@ -24,7 +24,7 @@ class RepositoryApiClient(BaseHarborApiClient):
         """
         base_harbor_client = BaseHarborApiClient(auth=self.auth)
         response = await base_harbor_client.harbor_paginated_get(api_url=api_url, _page=_page)
-        return response
+        return json.dumps(response, indent=4)
 
     async def get_specific_project_repos(self, api_url, _page: int = 1):
         """
@@ -39,4 +39,4 @@ class RepositoryApiClient(BaseHarborApiClient):
         """
         base_harbor_client = BaseHarborApiClient(auth=self.auth)
         response = await base_harbor_client.harbor_paginated_get(api_url=api_url, _page=_page)
-        return response
+        return json.dumps(response, indent=4)

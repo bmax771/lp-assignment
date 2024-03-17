@@ -1,5 +1,5 @@
 from src.base_api_client import BaseHarborApiClient
-
+import json
 
 class ProjectApiClient(BaseHarborApiClient):
     """
@@ -24,4 +24,4 @@ class ProjectApiClient(BaseHarborApiClient):
         """
         base_harbor_client = BaseHarborApiClient(auth=self.auth)
         response = await base_harbor_client.harbor_paginated_get(api_url=api_url, _page=_page)
-        return response
+        return json.dumps(response, indent=4)
