@@ -76,7 +76,7 @@ async def input_execution(inputs: list):
                 except ValueError:
                     return "Please enter valid number of days as integer number."
             artifact_object = ArtifactApiClient((getenv("HARBOR_USERNAME"), getenv("HARBOR_PASSWORD")))
-            response = await artifact_object.delete_artifact(api_url=url_string,
+            response = await artifact_object.delete_artifact_tag(api_url=url_string,
                                                              days_threshold_for_deletion=days_threshold_for_deletion)
             return response
         else:

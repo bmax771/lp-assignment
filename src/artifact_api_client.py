@@ -29,7 +29,18 @@ class ArtifactApiClient(BaseHarborApiClient):
         response = await base_harbor_client.harbor_paginated_get(api_url=api_url, _page=_page)
         return json.dumps(response, indent=4)
 
-    async def delete_artifact(self, api_url, _page: int = 1, days_threshold_for_deletion: int = 30):
+    async def delete_artifact_tag(self, api_url, _page: int = 1, days_threshold_for_deletion: int = 30):
+        """
+            Deletes tags for artifacts older than specified days.
+
+            Args:
+                api_url (str): URL with query string for Artifacts API call
+                _page (int, optional): Page number to retrieve.
+                days_threshold_for_deletion (int, optional): Threshold for number of days, after which tags will be deleted.
+
+            Returns:
+                collated_response (list): List of Artifacts across all pages.
+        """
         collated_delete_response = []
         list_of_artifacts = await self.get_artifacts(api_url)
         if "digest" in list_of_artifacts:
